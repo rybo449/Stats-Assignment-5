@@ -34,31 +34,43 @@ exp(confint.default(fit)["mar",])
 exp(confint.default(fit)["kid5",])
 exp(confint.default(fit)["phd",])
 exp(confint.default(fit)["ment",])
+## Statistical significant at 5%
+
+coef(summary(fit))[,4]
+##Since the p-values are much lesser thatn 0.05, we reject the null hypothesis that beta = 0. Hence, there is a 
+##significant relationship between the variables in the linear regression model of the data set.
 
 
 ##Fit the model using the Fisher scoring algorithm
+library(numDeriv)
 ff<-art~fem+mar+kid5+phd+ment
 ols<-lm(ff)
-ols
-model.matrix(ols)
-
-
+X<-model.matrix(ols)
+poisson<-glm(ff, family = poisson(link = "log"))
+summary(poisson)
 ##Fisher Function
+beta0<-ols$coef
+beta0
+U = function(theta, X){
+  
+  for (i in 1:nrow(X)){
+    u = u + exp(theta) + X[i]
+  }
+  u
+}
 
-Fisher.it = function(Y,X, pi0, niter=1, print=F) { 
-  pi = pi0
-   for (i in 1:niter) {
-     W = pi*(1-pi)
-     Z = log(pi/(1-pi)) + (Y - pi)/(pi*(1-pi)) 
-     lmobj = lm(Z ~ X - 1, weights=W)
-     beta = lmobj$coef
-     eta = X %*% beta
-     pi = exp(eta)/(1 + exp(eta)) 
-     if (print) {
-       print(paste("Iteration ", as.character(i), ": Betahat"))
-       print(beta)}
-   }
-   XWX = t(lmobj$R) %*% lmobj$R
-return(beta, XWX, pi, W) }
-ff<-~fem+mar+kid5+phd+ment
-out = Fisher.it(ols, ff, 0.75, 1)
+J<-function(theta, X){
+  for(i in nrow(X)){
+    j = j - exp(theta)
+  }
+  j
+}
+
+fisher<-function(theta0, X){
+  for(i in 1:5){
+    theta = theta0 + U(theta,X)/J(theta,X)
+    theta = theta
+  }
+  theta
+}
+fisher(exp(beta0), X)
